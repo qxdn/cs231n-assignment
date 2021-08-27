@@ -28,7 +28,8 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    n = x.shape[0]
+    out = (np.dot(x.reshape(n,-1),w) + b)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -61,7 +62,11 @@ def affine_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    n = x.shape[0]
+    temp_x = x.reshape(n,-1)
+    dx = np.dot(dout,w.T).reshape(x.shape)
+    dw = np.dot(temp_x.T,dout)
+    db = np.sum(dout,axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -87,7 +92,7 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = np.maximum(0,x)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -114,7 +119,7 @@ def relu_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx = dout * (x > 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -143,9 +148,25 @@ def svm_loss(x, y):
     # This will be similar to the svm loss vectorized implementation in       #
     # cs231n/classifiers/linear_svm.py.                                       #
     ###########################################################################
-    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)***** 
 
-    pass
+    n = x.shape[0]
+    # (n,)
+    correct_class_socre = x[range(n),list(y)]
+    # (n,1)
+    correct_class_socre = np.reshape(correct_class_socre,(-1,1))
+    margins = np.maximum(0,x-correct_class_socre+1)
+    margins[range(n),list(y)] = 0
+    loss = np.sum(margins/n) 
+
+    # 计算梯度
+    num_pos = np.sum(margins>0,axis=1)
+    # 梯度就是x
+    dx = np.zeros_like(x)
+    dx[margins > 0] = 1
+    # j th个地方还要额外减去一个x
+    dx[np.arange(n), y] -= num_pos
+    dx /= n
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -176,8 +197,14 @@ def softmax_loss(x, y):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    n = x.shape[0]
+    temp = np.exp(x) / np.sum(np.exp(x),axis=1).reshape(-1,1)
+    loss = - np.sum(np.log(temp[range(n),y]))
+    loss /= n
 
+    dx = temp.copy()
+    dx[range(n),y] -= 1
+    dx /= n
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
