@@ -198,7 +198,9 @@ def softmax_loss(x, y):
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     n = x.shape[0]
-    temp = np.exp(x) / np.sum(np.exp(x),axis=1).reshape(-1,1)
+    # 防止溢出
+    scores = x - np.max(x,axis=1).reshape(-1,1)
+    temp = np.exp(scores) / np.sum(np.exp(scores),axis=1).reshape(-1,1)
     loss = - np.sum(np.log(temp[range(n),y]))
     loss /= n
 
