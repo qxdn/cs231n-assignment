@@ -1,3 +1,7 @@
 __pycache__
 cifar-10-batches-py
+im2col_cython.c
+im2col_cython.cp38-win_amd64.pyd
+im2col_cython.pyd
+build
 *.zip
