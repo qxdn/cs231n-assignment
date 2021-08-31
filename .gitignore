@@ -4,4 +4,6 @@ im2col_cython.c
 im2col_cython.cp38-win_amd64.pyd
 im2col_cython.pyd
 build
+imagenet_val_25.npz
+coco_captioning
 *.zip
