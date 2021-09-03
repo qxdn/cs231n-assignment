@@ -7,12 +7,14 @@ import math
 This file defines layer types that are commonly used for transformers.
 """
 
+
 class PositionalEncoding(nn.Module):
     """
     Encodes information about the positions of the tokens in the sequence. In
     this case, the layer has no learnable parameters, since it is a simple
     function of sines and cosines.
     """
+
     def __init__(self, embed_dim, dropout=0.1, max_len=5000):
         """
         Construct the PositionalEncoding layer.
@@ -38,7 +40,11 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        position = torch.arange(0, max_len).unsqueeze(1)
+        exp_term = torch.exp(torch.arange(0, embed_dim, 2) * -(math.log(10000) / embed_dim))
+        # ::用法 [start:end:step]
+        pe[:, :, 0::2] = torch.sin(position * exp_term)
+        pe[:, :, 1::2] = torch.cos(position * exp_term)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -70,7 +76,7 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        output = self.dropout(x + self.pe[:, :S, :])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -117,7 +123,7 @@ class MultiHeadAttention(nn.Module):
         self.query = nn.Linear(embed_dim, embed_dim)
         self.value = nn.Linear(embed_dim, embed_dim)
         self.proj = nn.Linear(embed_dim, embed_dim)
-        
+
         ############################################################################
         # TODO: Initialize any remaining layers and parameters to perform the      #
         # attention operation as defined in Transformer_Captioning.ipynb. We will  #
@@ -126,7 +132,9 @@ class MultiHeadAttention(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        self.dropout = nn.Dropout(dropout)
+        self.softmax = nn.Softmax(dim=-1)
+        self.H = num_heads
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -174,12 +182,26 @@ class MultiHeadAttention(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        H = self.H
+        d = D // H
+        # transpose用法不太一样
+        Q = self.query(query).reshape(
+            (N, S, H, d)).transpose(1, 2)  # (N,H,S,E/H)
+        V = self.value(value).reshape(
+            (N, T, H, d)).transpose(1, 2)  # (N,H,T,E/H)
+        K = self.key(key).reshape((N, T, H, d)).transpose(1, 2)  # (N,H,T,E/H)
+        y = torch.matmul(Q, K.transpose(2, 3)) / math.sqrt(d)  # (N,H,S,T)
+        if attn_mask is not None:
+            attn_mask = attn_mask.bool()
+            y[:, :, ~attn_mask] = float('-inf')
+        y = self.softmax(y)  # (N,H,S,T)
+        y = self.dropout(y)
+        y = torch.matmul(y, V)  # (N,H,S,E/H)
+        y = y.transpose(1, 2).reshape((N, S, D))  # (N,S,E)
+        output = self.proj(y)  # (N,S,E)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
         return output
-
-
